@@ -16,26 +16,39 @@ const C = {
   border: theme.colors.border,
 };
 
-const PROVIDER_LABELS: Record<string, string> = {
-  google: '🔵 Google', facebook: '📘 Facebook',
-  microsoft: '🔷 Microsoft', mock: '🛠 Demo',
-};
-
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
+  const { language, setLanguage } = useLanguageStore();
+  const t = translations[language];
+  const isRTL = language === 'ar';
+
+  const PROVIDER_LABELS: Record<string, string> = {
+    google: '🔵 Google',
+    facebook: '📘 Facebook',
+    microsoft: '🔷 Microsoft',
+    mock: language === 'ar' ? '🛠 تجريبي' : '🛠 Demo',
+  };
 
   const handleLogout = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: logout },
+    Alert.alert(t.signOut, t.signOutConfirm, [
+      { text: t.cancel, style: 'cancel' },
+      { text: t.signOut, style: 'destructive', onPress: logout },
+    ]);
+  };
+
+  const handleLanguageSelect = () => {
+    Alert.alert(t.selectLanguage, '', [
+      { text: 'العربية', onPress: () => setLanguage('ar') },
+      { text: 'English', onPress: () => setLanguage('en') },
     ]);
   };
 
   const menuItems = [
-    { icon: '🔔', label: 'Notification Preferences', action: () => {} },
-    { icon: '🔒', label: 'Privacy & Data', action: () => {} },
-    { icon: '📄', label: 'Terms of Service', action: () => {} },
-    { icon: '🆘', label: 'Support', action: () => {} },
+    { icon: '🌐', label: t.language, valueText: language === 'ar' ? 'العربية' : 'English', action: handleLanguageSelect },
+    { icon: '🔔', label: t.notificationPreferences, action: () => {} },
+    { icon: '🔒', label: t.privacyData, action: () => {} },
+    { icon: '📄', label: t.termsOfService, action: () => {} },
+    { icon: '🆘', label: t.support, action: () => {} },
   ];
 
   return (
@@ -45,7 +58,7 @@ export default function ProfileScreen() {
         <View style={styles.avatarRing}>
           <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase() ?? '?'}</Text>
         </View>
-        <Text style={styles.userName}>{user?.name ?? 'Unknown User'}</Text>
+        <Text style={styles.userName}>{user?.name ?? t.unknownUser}</Text>
         <Text style={styles.userEmail}>{user?.email}</Text>
         <View style={styles.providerBadge}>
           <Text style={styles.providerText}>{PROVIDER_LABELS[user?.provider ?? 'mock']}</Text>
@@ -53,17 +66,28 @@ export default function ProfileScreen() {
       </LinearGradient>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.menuList}>
         {menuItems.map((item) => (
-          <TouchableOpacity key={item.label} style={styles.menuItem} onPress={item.action}>
-            <Text style={styles.menuIcon}>{item.icon}</Text>
-            <Text style={styles.menuLabel}>{item.label}</Text>
-            <Text style={styles.menuChevron}>›</Text>
+          <TouchableOpacity 
+            key={item.label} 
+            style={[styles.menuItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }]} 
+            onPress={item.action}
+          >
+            <Text style={[styles.menuIcon, { marginRight: isRTL ? 0 : 14, marginLeft: isRTL ? 14 : 0 }]}>{item.icon}</Text>
+            <Text style={[styles.menuLabel, { textAlign: isRTL ? 'right' : 'left' }]}>{item.label}</Text>
+            {item.valueText && (
+              <Text style={[styles.menuValue, { marginRight: isRTL ? 8 : 0, marginLeft: isRTL ? 0 : 8 }]}>
+                {item.valueText}
+              </Text>
+            )}
+            <Text style={styles.menuChevron}>{isRTL ? '‹' : '›'}</Text>
           </TouchableOpacity>
         ))}
         <View style={styles.separator} />
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-          <Text style={styles.logoutText}>Sign Out</Text>
+          <Text style={styles.logoutText}>{t.signOut}</Text>
         </TouchableOpacity>
-        <Text style={styles.version}>CareTag Consumer v0.1.0</Text>
+        <Text style={styles.version}>
+          {language === 'ar' ? 'كيرتاج المستهلك' : 'CareTag Consumer'} v0.1.0
+        </Text>
       </ScrollView>
     </View>
   );
@@ -80,8 +104,9 @@ const styles = StyleSheet.create({
   providerText: { color: C.accent, fontSize: 13, fontWeight: theme.typography.weights.bold },
   menuList: { padding: 24, paddingBottom: 60 },
   menuItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: theme.borderRadius.card, padding: 16, marginBottom: 10, borderWidth: 1.5, borderColor: C.border },
-  menuIcon: { fontSize: 20, marginRight: 14 },
+  menuIcon: { fontSize: 20 },
   menuLabel: { flex: 1, color: C.text, fontSize: 15, fontWeight: theme.typography.weights.bold },
+  menuValue: { color: theme.colors.textSecondary, fontSize: 14, fontWeight: '700' },
   menuChevron: { color: C.muted, fontSize: 20 },
   separator: { height: 1.5, backgroundColor: C.border, marginVertical: 24 },
   logoutBtn: { height: 54, backgroundColor: C.dangerBg, borderRadius: theme.borderRadius.button, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: C.danger, marginBottom: 20 },

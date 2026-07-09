@@ -37,6 +37,13 @@ export default function AgenciesScreen() {
   const [comment, setComment] = useState('');
   const [submittingRating, setSubmittingRating] = useState(false);
 
+  const { language } = useLanguageStore();
+  const t = translations[language];
+  const isRTL = language === 'ar';
+
+  const rowDirection = isRTL ? 'row-reverse' : 'row';
+  const textAlign = isRTL ? 'right' : 'left';
+
   useEffect(() => {
     bootstrapLocationAndAgencies();
     // Attempt to sync any unsynced ratings from previous sessions
@@ -77,7 +84,7 @@ export default function AgenciesScreen() {
         setAgencies(list);
       }
     } catch (e) {
-      Alert.alert('Error', 'Failed to retrieve CareTag agencies.');
+      Alert.alert(t.error, language === 'ar' ? 'فشل استرجاع مراكز الخدمة كيرتاج.' : 'Failed to retrieve CareTag agencies.');
     } finally {
       setLoading(false);
     }
@@ -128,7 +135,7 @@ export default function AgenciesScreen() {
       
       // 2. Clear Modal early for better UX
       setRatingModalVisible(false);
-      Alert.alert('Thank You', 'Your rating was saved locally and will sync in the background.');
+      Alert.alert(t.reviewSavedAlert, t.reviewSavedOfflineDetail);
 
       // 3. Attempt API sync inline
       const res = await submitRating(selectedAgency.id, score, comment);
@@ -158,20 +165,20 @@ export default function AgenciesScreen() {
   ];
 
   const renderAgencyItem = ({ item }: { item: Agency }) => (
-    <View style={styles.agencyCard}>
+    <View style={[styles.agencyCard, { flexDirection: rowDirection }]}>
       <View style={styles.cardInfo}>
-        <Text style={styles.agencyName}>{item.name}</Text>
-        <Text style={styles.agencyAddress}>{item.address}</Text>
-        <Text style={styles.agencyPhone}>📞 {item.phone}</Text>
+        <Text style={[styles.agencyName, { textAlign }]}>{item.name}</Text>
+        <Text style={[styles.agencyAddress, { textAlign }]}>{item.address}</Text>
+        <Text style={[styles.agencyPhone, { textAlign }]}>📞 {item.phone}</Text>
         
-        <View style={styles.ratingBadgeContainer}>
-          <View style={styles.starContainer}>
+        <View style={[styles.ratingBadgeContainer, { flexDirection: rowDirection }]}>
+          <View style={[styles.starContainer, { flexDirection: rowDirection }]}>
             <Icon name="star" size={16} color="#EAB308" />
-            <Text style={styles.ratingText}>{item.rating.toFixed(1)}</Text>
+            <Text style={[styles.ratingText, { marginLeft: isRTL ? 0 : 4, marginRight: isRTL ? 4 : 0 }]}>{item.rating.toFixed(1)}</Text>
           </View>
           {item.distance !== undefined && (
-            <Text style={styles.distanceText}>
-              • {item.distance.toFixed(1)} km away
+            <Text style={[styles.distanceText, { marginLeft: isRTL ? 0 : 8, marginRight: isRTL ? 8 : 0 }]}>
+              • {item.distance.toFixed(1)} {t.kmAway}
             </Text>
           )}
         </View>
@@ -179,7 +186,7 @@ export default function AgenciesScreen() {
       
       <TouchableOpacity style={styles.rateBtn} onPress={() => handleOpenRatingModal(item)}>
         <Icon name="star-outline" size={18} color={theme.colors.primary} />
-        <Text style={styles.rateBtnText}>Review</Text>
+        <Text style={styles.rateBtnText}>{t.review}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -206,7 +213,7 @@ export default function AgenciesScreen() {
                 latitude: userLocation.latitude,
                 longitude: userLocation.longitude,
               }}
-              title="You Are Here"
+              title={t.youAreHere}
             >
               <View style={styles.userMarkerCircle}>
                 <Icon name="account" size={16} color="#FFFFFF" />
@@ -238,7 +245,7 @@ export default function AgenciesScreen() {
 
       {/* List View Section */}
       <View style={styles.listSection}>
-        <Text style={styles.sectionTitle}>Authorized Service Centers</Text>
+        <Text style={[styles.sectionTitle, { textAlign }]}>{t.authorizedCenters}</Text>
         {loading ? (
           <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loader} />
         ) : (
@@ -248,7 +255,7 @@ export default function AgenciesScreen() {
             renderItem={renderAgencyItem}
             contentContainerStyle={styles.listContainer}
             ListEmptyComponent={
-              <Text style={styles.emptyText}>No agencies found nearby.</Text>
+              <Text style={styles.emptyText}>{t.noAgenciesNearby}</Text>
             }
           />
         )}
@@ -258,8 +265,8 @@ export default function AgenciesScreen() {
       <Modal visible={ratingModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Rate Service Center</Text>
+            <View style={[styles.modalHeader, { flexDirection: rowDirection }]}>
+              <Text style={styles.modalTitle}>{t.rateServiceCenter}</Text>
               <TouchableOpacity onPress={() => setRatingModalVisible(false)}>
                 <Icon name="close" size={24} color={theme.colors.textSecondary} />
               </TouchableOpacity>
@@ -269,7 +276,7 @@ export default function AgenciesScreen() {
               <Text style={styles.agencyTitle}>{selectedAgency?.name}</Text>
               
               {/* Star selector */}
-              <View style={styles.starRow}>
+              <View style={[styles.starRow, { flexDirection: rowDirection }]}>
                 {[1, 2, 3, 4, 5].map(num => (
                   <TouchableOpacity key={num} onPress={() => setScore(num)}>
                     <Icon
@@ -281,10 +288,10 @@ export default function AgenciesScreen() {
                 ))}
               </View>
 
-              <Text style={styles.label}>Write your review</Text>
+              <Text style={[styles.label, { textAlign }]}>{t.writeReview}</Text>
               <TextInput
-                style={[styles.input, styles.textArea]}
-                placeholder="Share your experience (oil quality, speed, service)..."
+                style={[styles.input, styles.textArea, { textAlign }]}
+                placeholder={t.shareExperiencePlaceholder}
                 placeholderTextColor={theme.colors.textSecondary}
                 multiline
                 numberOfLines={4}
@@ -296,7 +303,7 @@ export default function AgenciesScreen() {
                 {submittingRating ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.submitBtnText}>Submit Review</Text>
+                  <Text style={styles.submitBtnText}>{t.submitReview}</Text>
                 )}
               </TouchableOpacity>
             </View>

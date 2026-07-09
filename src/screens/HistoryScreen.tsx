@@ -19,6 +19,8 @@ import { useGarageStore } from '../store/garageStore';
 import { getServiceHistory, insertServiceHistoryBatch, type ServiceHistory } from '../db/clientDatabase';
 import { fetchServiceHistoryAPI } from '../services/apiClient';
 import { theme } from '../theme';
+import { useLanguageStore } from '../store/languageStore';
+import { translations } from '../constants/translations';
 
 export default function HistoryScreen({ route }: any) {
   const { vehicles } = useGarageStore();
@@ -27,6 +29,13 @@ export default function HistoryScreen({ route }: any) {
   const [selectedVehId, setSelectedVehId] = useState<string | null>(null);
   const [history, setHistory] = useState<ServiceHistory[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const { language } = useLanguageStore();
+  const t = translations[language];
+  const isRTL = language === 'ar';
+
+  const rowDirection = isRTL ? 'row-reverse' : 'row';
+  const textAlign = isRTL ? 'right' : 'left';
 
   // Set default selected vehicle from route params, or fallback to first vehicle in garage
   useEffect(() => {
@@ -80,7 +89,7 @@ export default function HistoryScreen({ route }: any) {
   const selectedVehicle = vehicles.find(v => v.id === selectedVehId);
 
   const renderTimelineItem = ({ item, index }: { item: ServiceHistory; index: number }) => (
-    <View style={styles.timelineRow}>
+    <View style={[styles.timelineRow, { flexDirection: rowDirection }]}>
       {/* Left Timeline Indicator */}
       <View style={styles.timelineIndicator}>
         <View style={styles.timelineCircle}>
@@ -90,30 +99,33 @@ export default function HistoryScreen({ route }: any) {
       </View>
 
       {/* Right Service Details Card */}
-      <View style={styles.historyCard}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.serviceType}>{item.service_type}</Text>
+      <View style={[styles.historyCard, { marginLeft: isRTL ? 0 : 8, marginRight: isRTL ? 8 : 0 }]}>
+        <View style={[styles.cardHeader, { flexDirection: rowDirection }]}>
+          <Text style={[styles.serviceType, { textAlign }]}>{item.service_type}</Text>
           <Text style={styles.dateText}>
             {new Date(item.completed_at).toLocaleDateString()}
           </Text>
         </View>
 
-        <View style={styles.specsRow}>
-          <View style={styles.specBadge}>
+        <View style={[styles.specsRow, { flexDirection: rowDirection }]}>
+          <View style={[styles.specBadge, { flexDirection: rowDirection, marginRight: isRTL ? 0 : 8, marginLeft: isRTL ? 8 : 0 }]}>
             <Icon name="speedometer" size={14} color={theme.colors.textSecondary} />
             <Text style={styles.specVal}>{item.mileage.toLocaleString()} km</Text>
           </View>
-          <View style={styles.specBadge}>
+          <View style={[styles.specBadge, { flexDirection: rowDirection, marginRight: isRTL ? 0 : 8, marginLeft: isRTL ? 8 : 0 }]}>
             <Icon name="oil" size={14} color={theme.colors.textSecondary} />
             <Text style={styles.specVal}>{item.oil_type}</Text>
           </View>
           <View style={[styles.specBadge, { 
+            flexDirection: rowDirection,
+            marginRight: isRTL ? 0 : 8,
+            marginLeft: isRTL ? 8 : 0,
             backgroundColor: item.filter_changed ? theme.colors.highlight : theme.colors.dangerBg,
             borderColor: item.filter_changed ? theme.colors.primary : theme.colors.danger
           }]}>
             <Icon name="filter" size={14} color={item.filter_changed ? theme.colors.primary : theme.colors.danger} />
-            <Text style={[styles.specVal, { color: item.filter_changed ? theme.colors.primary : theme.colors.danger }]}>
-              {item.filter_changed ? 'Filter Replaced' : 'Filter Inspected'}
+            <Text style={[styles.specVal, { color: item.filter_changed ? theme.colors.primary : theme.colors.danger, marginLeft: isRTL ? 0 : 4, marginRight: isRTL ? 4 : 0 }]}>
+              {item.filter_changed ? t.filterReplaced : t.filterInspected}
             </Text>
           </View>
         </View>
@@ -121,14 +133,14 @@ export default function HistoryScreen({ route }: any) {
         {/* Display PII details (technician and notes) only if they are not severed/omitted */}
         {item.technician_name && (
           <View style={styles.piiSection}>
-            <Text style={styles.piiLabel}>Technician: <Text style={styles.piiVal}>{item.technician_name}</Text></Text>
+            <Text style={[styles.piiLabel, { textAlign }]}>{t.technician}: <Text style={styles.piiVal}>{item.technician_name}</Text></Text>
           </View>
         )}
 
         {item.notes && (
           <View style={styles.notesSection}>
-            <Text style={styles.notesTitle}>Service Notes:</Text>
-            <Text style={styles.notesText}>{item.notes}</Text>
+            <Text style={[styles.notesTitle, { textAlign }]}>{t.serviceNotes}:</Text>
+            <Text style={[styles.notesText, { textAlign }]}>{item.notes}</Text>
           </View>
         )}
       </View>
@@ -164,7 +176,7 @@ export default function HistoryScreen({ route }: any) {
           )}
           contentContainerStyle={styles.selectorList}
           ListEmptyComponent={
-            <Text style={styles.noVehiclesSelectorText}>No vehicles in garage</Text>
+            <Text style={[styles.noVehiclesSelectorText, { textAlign }]}>{t.noVehiclesInGarage}</Text>
           }
         />
       </View>
@@ -180,10 +192,10 @@ export default function HistoryScreen({ route }: any) {
           contentContainerStyle={styles.timelineContainer}
           ListHeaderComponent={
             selectedVehicle?.is_transferred === 1 ? (
-              <View style={styles.truncatedNotice}>
+              <View style={[styles.truncatedNotice, { flexDirection: rowDirection }]}>
                 <Icon name="information-outline" size={16} color={theme.colors.primary} />
-                <Text style={styles.noticeText}>
-                  Showing truncated mechanical history (last 5 visits). Personal data severed.
+                <Text style={[styles.noticeText, { marginLeft: isRTL ? 0 : 8, marginRight: isRTL ? 8 : 0, textAlign }]}>
+                  {t.showingTruncatedHistoryNotice}
                 </Text>
               </View>
             ) : null
@@ -192,12 +204,12 @@ export default function HistoryScreen({ route }: any) {
             selectedVehId ? (
               <View style={styles.emptyContainer}>
                 <Icon name="history" size={56} color={theme.colors.textSecondary} />
-                <Text style={styles.emptyText}>No service visits logged yet.</Text>
+                <Text style={styles.emptyText}>{t.noServiceLogged}</Text>
               </View>
             ) : (
               <View style={styles.emptyContainer}>
                 <Icon name="car" size={56} color={theme.colors.textSecondary} />
-                <Text style={styles.emptyText}>Add a vehicle to view its history.</Text>
+                <Text style={styles.emptyText}>{t.addVehicleToViewHistory}</Text>
               </View>
             )
           }

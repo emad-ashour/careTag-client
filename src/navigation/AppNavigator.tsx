@@ -11,6 +11,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { theme } from '../theme';
+import { useLanguageStore } from '../store/languageStore';
+import { translations } from '../constants/translations';
 
 // Screens
 import LoginScreen from '../screens/LoginScreen';
@@ -37,6 +39,9 @@ const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 function MainTabs() {
+  const { language } = useLanguageStore();
+  const t = translations[language];
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -68,10 +73,10 @@ function MainTabs() {
         },
       })}
     >
-      <Tab.Screen name="Garage" component={GarageScreen} options={{ title: 'Garage' }} />
-      <Tab.Screen name="History" component={HistoryScreen} options={{ title: 'Service History' }} />
-      <Tab.Screen name="Agencies" component={AgenciesScreen} options={{ title: 'Center Finder' }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'My Profile' }} />
+      <Tab.Screen name="Garage" component={GarageScreen} options={{ title: t.garage }} />
+      <Tab.Screen name="History" component={HistoryScreen} options={{ title: t.serviceHistory }} />
+      <Tab.Screen name="Agencies" component={AgenciesScreen} options={{ title: t.centerFinder }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: t.profile }} />
     </Tab.Navigator>
   );
 }
@@ -81,6 +86,9 @@ interface AppNavigatorProps {
 }
 
 export default function AppNavigator({ isAuthenticated }: AppNavigatorProps) {
+  const { language } = useLanguageStore();
+  const t = translations[language];
+
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {isAuthenticated ? (
@@ -91,7 +99,7 @@ export default function AppNavigator({ isAuthenticated }: AppNavigatorProps) {
             component={ClaimVehicleScreen} 
             options={{ 
               headerShown: true,
-              headerTitle: 'Claim Vehicle',
+              headerTitle: t.claimVehicleHeader,
               headerStyle: { backgroundColor: theme.colors.background, borderBottomColor: theme.colors.border },
               headerTitleStyle: { color: theme.colors.textPrimary, fontWeight: theme.typography.weights.bold },
               headerTintColor: theme.colors.primary

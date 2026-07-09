@@ -18,6 +18,8 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuthStore } from '../store/authStore';
 import { theme } from '../theme';
+import { useLanguageStore } from '../store/languageStore';
+import { translations } from '../constants/translations';
 
 export default function LoginScreen() {
   const {
@@ -28,6 +30,11 @@ export default function LoginScreen() {
     isLoading,
     error,
   } = useAuthStore();
+  const { language } = useLanguageStore();
+  const t = translations[language];
+  const isRTL = language === 'ar';
+
+  const rowDirection = isRTL ? 'row-reverse' : 'row';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -38,17 +45,21 @@ export default function LoginScreen() {
         <View style={styles.logoContainer}>
           <Icon name="car-connected" size={64} color={theme.colors.primary} />
           <Text style={styles.logoText}>Care<Text style={styles.logoAccent}>Tag</Text></Text>
-          <Text style={styles.tagline}>Automotive Maintenance, Frictionless & Secure</Text>
+          <Text style={styles.tagline}>{t.tagline}</Text>
         </View>
 
         {/* Action Form */}
         <View style={styles.buttonContainer}>
-          <Text style={styles.sectionTitle}>Get Started</Text>
+          <Text style={styles.sectionTitle}>{t.getStarted}</Text>
           
           {error && (
-            <View style={styles.errorContainer}>
+            <View style={[styles.errorContainer, { flexDirection: rowDirection }]}>
               <Icon name="alert-circle" size={20} color={theme.colors.danger} />
-              <Text style={styles.errorText}>{error}</Text>
+              <Text style={[styles.errorText, { 
+                marginLeft: isRTL ? 0 : 8, 
+                marginRight: isRTL ? 8 : 0, 
+                textAlign: isRTL ? 'right' : 'left' 
+              }]}>{error}</Text>
             </View>
           )}
 
@@ -57,34 +68,34 @@ export default function LoginScreen() {
           ) : (
             <>
               {/* Google Button */}
-              <TouchableOpacity style={[styles.btn, styles.btnGoogle]} onPress={loginWithGoogle}>
-                <Icon name="google" size={24} color="#FFFFFF" style={styles.btnIcon} />
-                <Text style={styles.btnText}>Continue with Google</Text>
+              <TouchableOpacity style={[styles.btn, styles.btnGoogle, { flexDirection: rowDirection }]} onPress={loginWithGoogle}>
+                <Icon name="google" size={24} color="#FFFFFF" style={[styles.btnIcon, { marginRight: isRTL ? 0 : 12, marginLeft: isRTL ? 12 : 0 }]} />
+                <Text style={styles.btnText}>{t.loginGoogle}</Text>
               </TouchableOpacity>
 
               {/* Facebook Button */}
-              <TouchableOpacity style={[styles.btn, styles.btnFacebook]} onPress={loginWithFacebook}>
-                <Icon name="facebook" size={24} color="#FFFFFF" style={styles.btnIcon} />
-                <Text style={styles.btnText}>Continue with Facebook</Text>
+              <TouchableOpacity style={[styles.btn, styles.btnFacebook, { flexDirection: rowDirection }]} onPress={loginWithFacebook}>
+                <Icon name="facebook" size={24} color="#FFFFFF" style={[styles.btnIcon, { marginRight: isRTL ? 0 : 12, marginLeft: isRTL ? 12 : 0 }]} />
+                <Text style={styles.btnText}>{t.loginFacebook}</Text>
               </TouchableOpacity>
 
               {/* Microsoft Button */}
-              <TouchableOpacity style={[styles.btn, styles.btnMicrosoft]} onPress={loginWithMicrosoft}>
-                <Icon name="microsoft" size={24} color="#FFFFFF" style={styles.btnIcon} />
-                <Text style={styles.btnText}>Continue with Microsoft</Text>
+              <TouchableOpacity style={[styles.btn, styles.btnMicrosoft, { flexDirection: rowDirection }]} onPress={loginWithMicrosoft}>
+                <Icon name="microsoft" size={24} color="#FFFFFF" style={[styles.btnIcon, { marginRight: isRTL ? 0 : 12, marginLeft: isRTL ? 12 : 0 }]} />
+                <Text style={styles.btnText}>{t.loginMicrosoft}</Text>
               </TouchableOpacity>
 
               {/* Divider */}
               <View style={styles.dividerContainer}>
                 <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>OR</Text>
+                <Text style={styles.dividerText}>{t.or}</Text>
                 <View style={styles.dividerLine} />
               </View>
 
               {/* Dev Mode Bypass */}
-              <TouchableOpacity style={styles.btnMock} onPress={loginAsMock}>
-                <Icon name="flask-outline" size={20} color={theme.colors.primary} style={styles.btnIcon} />
-                <Text style={styles.btnMockText}>Enter Demo Mode (Bypass Auth)</Text>
+              <TouchableOpacity style={[styles.btnMock, { flexDirection: rowDirection }]} onPress={loginAsMock}>
+                <Icon name="flask-outline" size={20} color={theme.colors.primary} style={[styles.btnIcon, { marginRight: isRTL ? 0 : 12, marginLeft: isRTL ? 12 : 0 }]} />
+                <Text style={styles.btnMockText}>{t.enterDemo}</Text>
               </TouchableOpacity>
             </>
           )}

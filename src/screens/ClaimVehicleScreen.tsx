@@ -19,6 +19,8 @@ import { useGarageStore } from '../store/garageStore';
 import { useAuthStore } from '../store/authStore';
 import type { Vehicle } from '../db/clientDatabase';
 import { theme } from '../theme';
+import { useLanguageStore } from '../store/languageStore';
+import { translations } from '../constants/translations';
 
 export default function ClaimVehicleScreen({ route, navigation }: any) {
   const { vehicleId } = route.params || {};
@@ -29,11 +31,17 @@ export default function ClaimVehicleScreen({ route, navigation }: any) {
   const [claimedVehicle, setClaimedVehicle] = useState<Vehicle | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const { language } = useLanguageStore();
+  const t = translations[language];
+  const isRTL = language === 'ar';
+
+  const rowDirection = isRTL ? 'row-reverse' : 'row';
+
   useEffect(() => {
     if (vehicleId && user?.id) {
       executeClaim(vehicleId, user.id);
     } else if (!vehicleId) {
-      setError('Invalid claim request. No Vehicle ID specified.');
+      setError(language === 'ar' ? 'طلب مطالبة غير صالح. لم يتم تحديد معرف السيارة.' : 'Invalid claim request. No Vehicle ID specified.');
       setLoading(false);
     }
   }, [vehicleId, user]);
@@ -46,10 +54,10 @@ export default function ClaimVehicleScreen({ route, navigation }: any) {
       if (response.success && response.vehicle) {
         setClaimedVehicle(response.vehicle);
       } else {
-        setError('Failed to claim vehicle. It might have already been claimed.');
+        setError(t.claimFailedDetail);
       }
     } catch (e: any) {
-      setError(e.message ?? 'An error occurred during claiming.');
+      setError(e.message ?? t.unexpectedError);
     } finally {
       setLoading(false);
     }
@@ -65,46 +73,46 @@ export default function ClaimVehicleScreen({ route, navigation }: any) {
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color={theme.colors.primary} />
-            <Text style={styles.loadingText}>Claiming ownership of vehicle...</Text>
-            <Text style={styles.loadingSubtext}>Restoring mechanical logs securely</Text>
+            <Text style={styles.loadingText}>{t.claimingOwnership}</Text>
+            <Text style={styles.loadingSubtext}>{t.restoringLogs}</Text>
           </View>
         ) : error ? (
           <View style={styles.center}>
             <Icon name="alert-decagram" size={64} color={theme.colors.danger} />
-            <Text style={styles.errorTitle}>Claim Failed</Text>
+            <Text style={styles.errorTitle}>{t.claimFailed}</Text>
             <Text style={styles.errorText}>{error}</Text>
             
             <TouchableOpacity style={styles.btnRetry} onPress={() => executeClaim(vehicleId, user!.id)}>
-              <Text style={styles.btnRetryText}>Retry Claim</Text>
+              <Text style={styles.btnRetryText}>{t.retryClaim}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.btnSecondary} onPress={handleGoToGarage}>
-              <Text style={styles.btnSecondaryText}>Go to Garage</Text>
+              <Text style={styles.btnSecondaryText}>{t.garage}</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <View style={styles.center}>
             <Icon name="check-decagram" size={72} color={theme.colors.primary} />
-            <Text style={styles.successTitle}>Vehicle Claimed Successfully!</Text>
+            <Text style={styles.successTitle}>{t.claimSuccessTitle}</Text>
             
-            <View style={styles.vehicleDetailsCard}>
+            <View style={[styles.vehicleDetailsCard, { flexDirection: rowDirection }]}>
               <Icon name="car" size={36} color={theme.colors.primary} />
-              <View style={styles.detailsTextCol}>
-                <Text style={styles.vehicleName}>
+              <View style={[styles.detailsTextCol, { marginLeft: isRTL ? 0 : 16, marginRight: isRTL ? 16 : 0, alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
+                <Text style={[styles.vehicleName, { textAlign: isRTL ? 'right' : 'left' }]}>
                   {claimedVehicle?.year} {claimedVehicle?.make} {claimedVehicle?.model}
                 </Text>
-                <Text style={styles.vinText}>VIN: {claimedVehicle?.vin}</Text>
-                <Text style={styles.plateText}>Plate: {claimedVehicle?.license_plate}</Text>
+                <Text style={[styles.vinText, { textAlign: isRTL ? 'right' : 'left' }]}>{t.vin}: {claimedVehicle?.vin}</Text>
+                <Text style={[styles.plateText, { textAlign: isRTL ? 'right' : 'left' }]}>{t.plate}: {claimedVehicle?.license_plate}</Text>
               </View>
             </View>
 
             <Text style={styles.privacyCheckText}>
-              ✅ Seller PII severed successfully.{"\n"}
-              ✅ Last 5 service history logs synced locally.
+              {t.piiSeveredSuccess}{"\n"}
+              {t.historySyncedSuccess}
             </Text>
 
             <TouchableOpacity style={styles.btnSuccess} onPress={handleGoToGarage}>
-              <Text style={styles.btnSuccessText}>View in My Garage</Text>
+              <Text style={styles.btnSuccessText}>{t.viewInGarage}</Text>
             </TouchableOpacity>
           </View>
         )}
