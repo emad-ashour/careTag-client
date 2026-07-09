@@ -47,9 +47,9 @@ export default function App() {
 
   if (!appReady || authLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#0A0E1A', alignItems: 'center', justifyContent: 'center' }}>
-        <StatusBar barStyle="light-content" backgroundColor="#0A0E1A" />
-        <ActivityIndicator size="large" color="#3D7BF5" />
+      <View style={{ flex: 1, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <ActivityIndicator size="large" color="#0D7A41" />
       </View>
     );
   }
@@ -57,7 +57,7 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <StatusBar barStyle="light-content" backgroundColor="#0A0E1A" />
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
         <NavigationContainer linking={linking}>
           <AppNavigator isAuthenticated={isAuthenticated} />
         </NavigationContainer>

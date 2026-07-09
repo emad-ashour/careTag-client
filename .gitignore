@@ -1,0 +1,32 @@
+# Node
+node_modules/
+package-lock.json
+
+# iOS
+ios/build/
+ios/Pods/
+ios/DerivedData/
+*.xcworkspace
+*.xcuserdatad
+*.xcuserstate
+
+# Android
+android/app/build/
+android/build/
+.gradle/
+local.properties
+*.keystore
+!android/app/debug.keystore
+
+# Databases
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# IDE / System
+.DS_Store
+.idea/
+.vscode/
+*.log
+.ai/logs/

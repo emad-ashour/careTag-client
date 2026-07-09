@@ -2,11 +2,18 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Alert, ScrollView } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useAuthStore } from '../../store/authStore';
+import { theme } from '../../theme';
 
 const C = {
-  bg: '#0A0E1A', surface: '#12182B', card: '#161D33',
-  accent: '#3D7BF5', danger: '#FF4D6A',
-  text: '#E8EEFF', muted: '#8896BB', border: 'rgba(61,123,245,0.2)',
+  bg: theme.colors.background,
+  surface: theme.colors.surface,
+  card: theme.colors.surface,
+  accent: theme.colors.primary,
+  danger: theme.colors.danger,
+  dangerBg: theme.colors.dangerBg,
+  text: theme.colors.textPrimary,
+  muted: theme.colors.textSecondary,
+  border: theme.colors.border,
 };
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -33,7 +40,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
       <LinearGradient colors={[C.bg, C.surface]} style={styles.header}>
         <View style={styles.avatarRing}>
           <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase() ?? '?'}</Text>
@@ -65,19 +72,19 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   header: { paddingTop: 60, paddingBottom: 32, alignItems: 'center', paddingHorizontal: 24 },
-  avatarRing: { width: 88, height: 88, borderRadius: 44, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center', marginBottom: 14, borderWidth: 3, borderColor: 'rgba(61,123,245,0.4)' },
+  avatarRing: { width: 88, height: 88, borderRadius: 44, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center', marginBottom: 14, borderWidth: 3, borderColor: C.border },
   avatarText: { fontSize: 38, color: '#fff', fontWeight: '800' },
-  userName: { fontSize: 24, fontWeight: '800', color: C.text, marginBottom: 4 },
-  userEmail: { fontSize: 14, color: C.muted, marginBottom: 12 },
-  providerBadge: { backgroundColor: 'rgba(61,123,245,0.12)', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 5, borderWidth: 1, borderColor: C.border },
-  providerText: { color: C.accent, fontSize: 13, fontWeight: '700' },
+  userName: { fontSize: 24, fontWeight: theme.typography.weights.bold, color: C.text, marginBottom: 4 },
+  userEmail: { fontSize: 14, color: C.muted, marginBottom: 12, fontWeight: theme.typography.weights.medium },
+  providerBadge: { backgroundColor: theme.colors.highlight, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 5, borderWidth: 1.5, borderColor: C.border },
+  providerText: { color: C.accent, fontSize: 13, fontWeight: theme.typography.weights.bold },
   menuList: { padding: 24, paddingBottom: 60 },
-  menuItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 14, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: C.border },
+  menuItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: theme.borderRadius.card, padding: 16, marginBottom: 10, borderWidth: 1.5, borderColor: C.border },
   menuIcon: { fontSize: 20, marginRight: 14 },
-  menuLabel: { flex: 1, color: C.text, fontSize: 15, fontWeight: '600' },
+  menuLabel: { flex: 1, color: C.text, fontSize: 15, fontWeight: theme.typography.weights.bold },
   menuChevron: { color: C.muted, fontSize: 20 },
-  separator: { height: 1, backgroundColor: C.border, marginVertical: 24 },
-  logoutBtn: { height: 54, backgroundColor: 'rgba(255,77,106,0.1)', borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,77,106,0.3)', marginBottom: 20 },
-  logoutText: { color: C.danger, fontSize: 16, fontWeight: '800' },
-  version: { color: C.muted, fontSize: 12, textAlign: 'center' },
+  separator: { height: 1.5, backgroundColor: C.border, marginVertical: 24 },
+  logoutBtn: { height: 54, backgroundColor: C.dangerBg, borderRadius: theme.borderRadius.button, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: C.danger, marginBottom: 20 },
+  logoutText: { color: C.danger, fontSize: 16, fontWeight: theme.typography.weights.bold },
+  version: { color: C.muted, fontSize: 12, textAlign: 'center', fontWeight: theme.typography.weights.medium },
 });
