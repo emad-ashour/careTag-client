@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Alert, ScrollView 
 import LinearGradient from 'react-native-linear-gradient';
 import { useAuthStore } from '../../store/authStore';
 import { theme } from '../../theme';
+import { useLanguageStore } from '../../store/languageStore';
+import { translations } from '../../constants/translations';
 
 const C = {
   bg: theme.colors.background,

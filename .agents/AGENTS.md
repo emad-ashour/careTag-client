@@ -29,3 +29,7 @@ This file documents the workspace configurations, patterns, and agent instructio
 ## 5. API Client & Mocks
 - Direct API calls are located in `src/services/apiClient.ts`.
 - A mock interceptor automatically answers requests when `USE_MOCK_API` is set to `true` in `src/constants/config.ts`.
+
+## 6. AI Contracts
+- For all UI component generation and styling, you MUST strictly adhere to the design system tokens and UX patterns defined in .ai/contracts/ui-contract.md.
+- For all API integrations, Supabase configurations, and local environment routing, you MUST strictly adhere to the logic defined in .ai/contracts/api-contract.md.

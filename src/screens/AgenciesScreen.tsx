@@ -24,6 +24,8 @@ import { requestLocationPermission, getCurrentPosition, distanceKm, type Coordin
 import { fetchAgencies, submitRating, type Agency } from '../services/apiClient';
 import { insertOfflineRating, getUnsyncedRatings, markRatingSynced } from '../db/clientDatabase';
 import { theme } from '../theme';
+import { useLanguageStore } from '../store/languageStore';
+import { translations } from '../constants/translations';
 
 export default function AgenciesScreen() {
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
