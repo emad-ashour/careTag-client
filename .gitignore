@@ -30,3 +30,7 @@ local.properties
 .vscode/
 *.log
 .ai/logs/
+.cxx/
+android/app/.cxx/
+android/app/src/main/assets/
+
