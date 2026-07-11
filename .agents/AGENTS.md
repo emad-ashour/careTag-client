@@ -33,3 +33,6 @@ This file documents the workspace configurations, patterns, and agent instructio
 ## 6. AI Contracts
 - For all UI component generation and styling, you MUST strictly adhere to the design system tokens and UX patterns defined in .ai/contracts/ui-contract.md.
 - For all API integrations, Supabase configurations, and local environment routing, you MUST strictly adhere to the logic defined in .ai/contracts/api-contract.md.
+
+## 7. Git Remote Protocol Rule
+- Always use SSH/SSL (`git@github.com:...`) instead of HTTPS for all Git operations and remote repository configurations. Do not use HTTPS URLs.
