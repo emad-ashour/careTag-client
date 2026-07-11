@@ -1,27 +1,30 @@
 /**
  * authService.ts
  *
- * Secure Keychain storage & third-party OAuth integrations.
+ * Secure Keychain storage & Supabase Phone/Password Auth.
  */
 
 import * as Keychain from 'react-native-keychain';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { supabase } from './supabase';
+import { USE_MOCK_API } from '../constants/config';
 
 export interface UserProfile {
   id: string;
-  email: string;
+  mobile_number: string;
+  email?: string;
   name: string;
-  avatarUrl?: string;
-  provider: 'google' | 'facebook' | 'microsoft' | 'mock';
+  license_quota: number;
+  provider: 'phone' | 'mock';
 }
 
 const KEYCHAIN_SERVICE = 'com.caretag.client.auth';
 
-export const mockUserProfile = (provider: UserProfile['provider']): UserProfile => ({
+export const mockUserProfile = (provider: UserProfile['provider'], mobileNumber?: string, name?: string, email?: string): UserProfile => ({
   id: `usr-${provider}-123`,
-  email: `john.doe@${provider}-auth.com`,
-  name: 'John Doe',
-  avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80',
+  mobile_number: mobileNumber || '+970599000000',
+  name: name || 'Abu Omar',
+  email: email || 'abuomar@caretag.ps',
+  license_quota: 1, // default 1 license
   provider,
 });
 
@@ -51,49 +54,123 @@ export const clearStoredCredentials = async (): Promise<void> => {
   });
 };
 
-export const signInWithGoogle = async (): Promise<UserProfile> => {
+/**
+ * Checks if a mobile number is already registered in the profiles table.
+ */
+export const checkMobileNumberExists = async (phone: string): Promise<boolean> => {
+  if (USE_MOCK_API) {
+    // In mock mode, simulate "+970599000000" as already registered
+    return phone === '+970599000000';
+  }
+
   try {
-    // Configure if not already configured
-    await GoogleSignin.configure();
-    await GoogleSignin.hasPlayServices();
-    const userInfo = await GoogleSignin.signIn();
-    
-    // Parse Google user
-    const user = userInfo.data?.user;
-    if (!user) throw new Error('No user data returned from Google');
-    
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name || 'Google User',
-      avatarUrl: user.photo || undefined,
-      provider: 'google',
-    };
-  } catch (error: any) {
-    if (error.code === 'SIGN_IN_CANCELLED') {
-      throw new Error('CANCELLED');
-    }
-    console.error('[authService] Google sign in failed:', error);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('mobile_number', phone);
+
+    if (error) throw error;
+    return data && data.length > 0;
+  } catch (err) {
+    console.error('[authService] checkMobileNumberExists failed:', err);
+    // If the database call fails (e.g. table doesn't exist yet), let auth signUp handle duplicate checks
+    return false;
+  }
+};
+
+/**
+ * Signs up a user using Supabase Auth phone provider and stores user metadata.
+ */
+export const signUpWithPhone = async (
+  phone: string,
+  password: string,
+  email: string,
+  name: string
+): Promise<{ user: UserProfile; token: string }> => {
+  // Check if number already registered first
+  const exists = await checkMobileNumberExists(phone);
+  if (exists) {
+    throw new Error('MOBILE_EXISTS');
+  }
+
+  const { data, error } = await supabase.auth.signUp({
+    phone,
+    password,
+    options: {
+      data: {
+        name,
+        email,
+      },
+    },
+  });
+
+  if (error) {
+    console.error('[authService] signUpWithPhone error:', error.message);
     throw error;
   }
-};
 
-export const signInWithFacebook = async (): Promise<UserProfile> => {
-  // Stubbed for standard implementation
-  return mockUserProfile('facebook');
-};
-
-export const signInWithMicrosoft = async (): Promise<UserProfile> => {
-  // Stubbed for standard implementation
-  return mockUserProfile('microsoft');
-};
-
-export const signOut = async (provider: UserProfile['provider']): Promise<void> => {
-  if (provider === 'google') {
-    try {
-      await GoogleSignin.signOut();
-    } catch (e) {
-      console.warn('[authService] Google signOut failed:', e);
-    }
+  if (!data.user || !data.session) {
+    throw new Error('Verification required or registration incomplete.');
   }
+
+  // Create local user profile
+  const user: UserProfile = {
+    id: data.user.id,
+    mobile_number: phone,
+    name,
+    email,
+    license_quota: 1,
+    provider: 'phone',
+  };
+
+  return { user, token: data.session.access_token };
+};
+
+/**
+ * Signs in a user using Supabase Auth phone provider.
+ */
+export const signInWithPhone = async (phone: string, password: string): Promise<{ user: UserProfile; token: string }> => {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    phone,
+    password,
+  });
+
+  if (error) {
+    console.error('[authService] signInWithPhone error:', error.message);
+    throw error;
+  }
+
+  if (!data.user || !data.session) {
+    throw new Error('Failed to retrieve user session.');
+  }
+
+  let quota = 1;
+  let name = 'User ' + phone.slice(-4);
+  let email = '';
+  try {
+    const { data: profile, error: profileErr } = await supabase
+      .from('profiles')
+      .select('license_quota, name, email')
+      .eq('id', data.user.id)
+      .single();
+
+    if (!profileErr && profile) {
+      quota = profile.license_quota ?? 1;
+      name = profile.name ?? name;
+      email = profile.email ?? '';
+    }
+  } catch (err) {
+    console.warn('[authService] Could not fetch profiles quota:', err);
+  }
+
+  const user: UserProfile = {
+    id: data.user.id,
+    mobile_number: phone,
+    name,
+    email,
+    license_quota: quota,
+    provider: 'phone',
+  };
+
+  return { user, token: data.session.access_token };
 };

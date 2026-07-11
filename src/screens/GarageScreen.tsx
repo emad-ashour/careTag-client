@@ -1,11 +1,9 @@
 /**
  * GarageScreen.tsx
  *
- * Multi-vehicle garage screen. Handles:
- *   - Displaying registered vehicles
- *   - Adding a new vehicle
- *   - Gating navigation to Service History
- *   - Gating the 4-step Secure Ownership Transfer state machine
+ * Multi-vehicle garage screen with license quota gating, lock overlay,
+ * and dynamic Paywall modal integration.
+ * Conforms strictly to the high-contrast light theme.
  */
 
 import React, { useEffect, useState } from 'react';
@@ -29,11 +27,17 @@ import type { Vehicle } from '../db/clientDatabase';
 import { theme } from '../theme';
 import { useLanguageStore } from '../store/languageStore';
 import { translations } from '../constants/translations';
+import PaywallModal from '../components/PaywallModal';
 
-export default function GarageScreen({ navigation }: any) {
+export default function GarageScreen({ route, navigation }: any) {
   const { user } = useAuthStore();
-  const { vehicles, isLoading, fetchGarage, addVehicle, removeVehicle } = useGarageStore();
+  const { vehicles, isLoading, fetchGarage, addVehicle } = useGarageStore();
   
+  // Quota & Paywall State
+  const quota = user?.license_quota ?? 1;
+  const [paywallVisible, setPaywallVisible] = useState(false);
+  const [paywallVehicle, setPaywallVehicle] = useState<Vehicle | null>(null);
+
   // Modals state
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [transferModalVisible, setTransferModalVisible] = useState(false);
@@ -47,8 +51,7 @@ export default function GarageScreen({ navigation }: any) {
   const [vin, setVin] = useState('');
   const [mileage, setMileage] = useState('');
 
-  // Transfer 4-step state machine state
-  // Steps: 1 (Disclaimer), 2 (Input Contact), 3 (Confirm), 4 (In Progress/Complete)
+  // Transfer state machine
   const [transferStep, setTransferStep] = useState(1);
   const [newOwnerContact, setNewOwnerContact] = useState('');
   const [transferLoading, setTransferLoading] = useState(false);
@@ -65,6 +68,20 @@ export default function GarageScreen({ navigation }: any) {
       fetchGarage(user.id);
     }
   }, [user]);
+
+  // Handle deep-link parameters for newly claimed over-quota vehicles
+  useEffect(() => {
+    if (route.params?.highlightLockedVehicleId && vehicles.length > 0) {
+      const targetId = route.params.highlightLockedVehicleId;
+      const targetIndex = vehicles.findIndex(v => v.id === targetId);
+      
+      if (targetIndex >= quota) {
+        setPaywallVehicle(vehicles[targetIndex]);
+        setPaywallVisible(true);
+        navigation.setParams({ highlightLockedVehicleId: undefined });
+      }
+    }
+  }, [route.params, vehicles, quota]);
 
   const handleAddVehicle = async () => {
     if (!make || !model || !year || !licensePlate || !vin || !mileage) {
@@ -88,8 +105,14 @@ export default function GarageScreen({ navigation }: any) {
       if (user?.id) {
         await addVehicle(newVeh, user.id);
         setAddModalVisible(false);
-        // Clear form
         setMake(''); setModel(''); setYear(''); setLicensePlate(''); setVin(''); setMileage('');
+        
+        const updatedVehiclesLength = vehicles.length + 1;
+        if (updatedVehiclesLength > quota) {
+          const newVehObj: Vehicle = { ...newVeh, owner_user_id: user.id, claimed_at: new Date().toISOString() };
+          setPaywallVehicle(newVehObj);
+          setPaywallVisible(true);
+        }
       }
     } catch (e) {
       Alert.alert(t.error, t.errorAddVehicle);
@@ -115,11 +138,10 @@ export default function GarageScreen({ navigation }: any) {
     if (!selectedVehicle) return;
 
     setTransferLoading(true);
-    setTransferStep(4); // Show progress/success screen
+    setTransferStep(4);
     try {
       const result = await performOwnershipTransfer(selectedVehicle.id, newOwnerContact);
       if (result.success) {
-        // Success
         await fetchGarage(user!.id);
       } else {
         Alert.alert(t.transferFailed, result.message);
@@ -133,64 +155,107 @@ export default function GarageScreen({ navigation }: any) {
     }
   };
 
-  const renderVehicleCard = ({ item }: { item: Vehicle }) => (
-    <View style={styles.card}>
-      <View style={[styles.cardHeader, { flexDirection: rowDirection }]}>
-        <View style={{ flex: 1, paddingRight: isRTL ? 0 : 8, paddingLeft: isRTL ? 8 : 0 }}>
-          <Text style={[styles.cardTitle, { textAlign }]}>{item.year} {item.make} {item.model}</Text>
-          <Text style={[styles.cardSubtitle, { textAlign }]}>{t.plate}: {item.license_plate} | {t.vin}: {item.vin}</Text>
+  const renderVehicleCard = ({ item, index }: { item: Vehicle; index: number }) => {
+    const isLocked = index >= quota;
+
+    return (
+      <View style={styles.cardContainer}>
+        <View style={[styles.card, isLocked && styles.cardLocked]}>
+          <View style={[styles.cardHeader, { flexDirection: rowDirection }]}>
+            <View style={{ flex: 1, paddingRight: isRTL ? 0 : 8, paddingLeft: isRTL ? 8 : 0 }}>
+              <Text style={[styles.cardTitle, { textAlign }]}>{item.year} {item.make} {item.model}</Text>
+              <Text style={[styles.cardSubtitle, { textAlign }]}>{t.plate}: {item.license_plate} | {t.vin}: {item.vin}</Text>
+            </View>
+            <Icon name="car" size={32} color={isLocked ? theme.colors.textSecondary : theme.colors.primary} />
+          </View>
+
+          <View style={[styles.cardSpecs, { flexDirection: rowDirection }]}>
+            <View style={[styles.specItem, { flexDirection: rowDirection }]}>
+              <Icon name="speedometer" size={20} color={theme.colors.textSecondary} />
+              <Text style={[styles.specText, { marginLeft: isRTL ? 0 : 8, marginRight: isRTL ? 8 : 0 }]}>
+                {item.mileage.toLocaleString()} km
+              </Text>
+            </View>
+            <View style={[styles.specItem, { flexDirection: rowDirection }]}>
+              <Icon name="calendar-sync" size={20} color={theme.colors.textSecondary} />
+              <Text style={[styles.specText, { marginLeft: isRTL ? 0 : 8, marginRight: isRTL ? 8 : 0 }]}>
+                {new Date(item.last_service_date).toLocaleDateString()}
+              </Text>
+            </View>
+          </View>
+
+          {item.is_transferred === 1 && (
+            <View style={[styles.badgeTransferred, { flexDirection: rowDirection }]}>
+              <Icon name="swap-horizontal" size={14} color={theme.colors.primary} />
+              <Text style={[styles.badgeText, { marginLeft: isRTL ? 0 : 6, marginRight: isRTL ? 6 : 0 }]}>{t.transferredVehicle}</Text>
+            </View>
+          )}
+
+          <View style={[styles.cardActions, { flexDirection: rowDirection }]}>
+            <TouchableOpacity
+              style={[styles.actionBtn, { flexDirection: rowDirection }]}
+              onPress={() => {
+                if (isLocked) {
+                  setPaywallVehicle(item);
+                  setPaywallVisible(true);
+                } else {
+                  navigation.navigate('History', { vehicleId: item.id });
+                }
+              }}
+            >
+              <Icon name={isLocked ? 'lock' : 'clipboard-text-clock-outline'} size={18} color={isLocked ? theme.colors.danger : theme.colors.primary} />
+              <Text style={[styles.actionBtnText, { color: isLocked ? theme.colors.danger : theme.colors.primary, marginLeft: isRTL ? 0 : 8, marginRight: isRTL ? 8 : 0 }]}>
+                {isLocked ? (isRTL ? 'مغلق - انقر لفتح القفل' : 'Locked - Tap to Unlock') : t.history}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.actionBtn,
+                { 
+                  flexDirection: rowDirection,
+                  borderLeftColor: isRTL ? 'transparent' : theme.colors.border,
+                  borderLeftWidth: isRTL ? 0 : 1.5,
+                  borderRightColor: isRTL ? theme.colors.border : 'transparent',
+                  borderRightWidth: isRTL ? 1.5 : 0,
+                }
+              ]}
+              onPress={() => {
+                if (isLocked) {
+                  setPaywallVehicle(item);
+                  setPaywallVisible(true);
+                } else {
+                  handleStartTransfer(item);
+                }
+              }}
+            >
+              <Icon name="account-arrow-right-outline" size={18} color={theme.colors.danger} />
+              <Text style={[styles.actionBtnText, { color: theme.colors.danger, marginLeft: isRTL ? 0 : 8, marginRight: isRTL ? 8 : 0 }]}>{t.transfer}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-        <Icon name="car" size={32} color={item.is_transferred ? theme.colors.textSecondary : theme.colors.primary} />
+
+        {/* Lock Overlay */}
+        {isLocked && (
+          <TouchableOpacity 
+            style={styles.lockOverlay} 
+            activeOpacity={0.9} 
+            onPress={() => {
+              setPaywallVehicle(item);
+              setPaywallVisible(true);
+            }}
+          >
+            <View style={styles.lockBanner}>
+              <Icon name="lock" size={24} color="#FFFFFF" />
+              <Text style={styles.lockBannerText}>
+                {isRTL ? 'انقر لفتح قفل سجلات السيارة' : 'Unlock Vehicle Records'}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
       </View>
-
-      <View style={[styles.cardSpecs, { flexDirection: rowDirection }]}>
-        <View style={[styles.specItem, { flexDirection: rowDirection }]}>
-          <Icon name="speedometer" size={20} color={theme.colors.textSecondary} />
-          <Text style={[styles.specText, { marginLeft: isRTL ? 0 : 8, marginRight: isRTL ? 8 : 0 }]}>{item.mileage.toLocaleString()} km</Text>
-        </View>
-        <View style={[styles.specItem, { flexDirection: rowDirection }]}>
-          <Icon name="calendar-sync" size={20} color={theme.colors.textSecondary} />
-          <Text style={[styles.specText, { marginLeft: isRTL ? 0 : 8, marginRight: isRTL ? 8 : 0 }]}>
-            {new Date(item.last_service_date).toLocaleDateString()}
-          </Text>
-        </View>
-      </View>
-
-      {item.is_transferred === 1 && (
-        <View style={[styles.badgeTransferred, { flexDirection: rowDirection }]}>
-          <Icon name="swap-horizontal" size={14} color={theme.colors.primary} />
-          <Text style={[styles.badgeText, { marginLeft: isRTL ? 0 : 6, marginRight: isRTL ? 6 : 0 }]}>{t.transferredVehicle}</Text>
-        </View>
-      )}
-
-      <View style={[styles.cardActions, { flexDirection: rowDirection }]}>
-        <TouchableOpacity
-          style={[styles.actionBtn, { flexDirection: rowDirection }]}
-          onPress={() => navigation.navigate('History', { vehicleId: item.id })}
-        >
-          <Icon name="clipboard-text-clock-outline" size={18} color={theme.colors.primary} />
-          <Text style={[styles.actionBtnText, { color: theme.colors.primary, marginLeft: isRTL ? 0 : 8, marginRight: isRTL ? 8 : 0 }]}>{t.history}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.actionBtn,
-            { 
-              flexDirection: rowDirection,
-              borderLeftColor: isRTL ? 'transparent' : theme.colors.border,
-              borderLeftWidth: isRTL ? 0 : 1.5,
-              borderRightColor: isRTL ? theme.colors.border : 'transparent',
-              borderRightWidth: isRTL ? 1.5 : 0,
-            }
-          ]}
-          onPress={() => handleStartTransfer(item)}
-        >
-          <Icon name="account-arrow-right-outline" size={18} color={theme.colors.danger} />
-          <Text style={[styles.actionBtnText, { color: theme.colors.danger, marginLeft: isRTL ? 0 : 8, marginRight: isRTL ? 8 : 0 }]}>{t.transfer}</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -214,7 +279,7 @@ export default function GarageScreen({ navigation }: any) {
       />
 
       <TouchableOpacity style={styles.fab} onPress={() => setAddModalVisible(true)}>
-        <Icon name="plus" size={30} color={theme.colors.white} />
+        <Icon name="plus" size={30} color="#FFFFFF" />
       </TouchableOpacity>
 
       {/* ADD VEHICLE MODAL */}
@@ -255,12 +320,10 @@ export default function GarageScreen({ navigation }: any) {
         </View>
       </Modal>
 
-      {/* SECURE OWNERSHIP TRANSFER MODAL (4-Step State Machine) */}
+      {/* OWNERSHIP TRANSFER MODAL */}
       <Modal visible={transferModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            
-            {/* Step 1: Warning / Disclaimer */}
             {transferStep === 1 && (
               <View style={styles.stepContainer}>
                 <View style={[styles.modalHeader, { flexDirection: rowDirection }]}>
@@ -270,27 +333,15 @@ export default function GarageScreen({ navigation }: any) {
                   </TouchableOpacity>
                 </View>
                 <ScrollView contentContainerStyle={styles.stepScroll}>
-                  <Text style={[styles.warningText, { textAlign }]}>
-                    {t.transferInitiateNotice}
-                  </Text>
-                  <Text style={[styles.vehicleNameHighlight, { textAlign }]}>
-                    {selectedVehicle?.year} {selectedVehicle?.make} {selectedVehicle?.model}
-                  </Text>
-                  
+                  <Text style={[styles.warningText, { textAlign }]}>{t.transferInitiateNotice}</Text>
+                  <Text style={[styles.vehicleNameHighlight, { textAlign }]}>{selectedVehicle?.year} {selectedVehicle?.make} {selectedVehicle?.model}</Text>
                   <View style={styles.warningBox}>
                     <Icon name="shield-alert-outline" size={24} color={theme.colors.danger} style={{ marginBottom: 8, alignSelf: isRTL ? 'flex-end' : 'flex-start' }} />
                     <Text style={[styles.warningBoxTitle, { textAlign }]}>{t.privacyAgreementTitle}</Text>
-                    <Text style={[styles.warningBoxBody, { textAlign }]}>
-                      {t.piiSeveredDesc}
-                    </Text>
-                    <Text style={[styles.warningBoxBody, { textAlign }]}>
-                      {t.historyTruncatedDesc}
-                    </Text>
-                    <Text style={[styles.warningBoxBody, { textAlign }]}>
-                      {t.irreversibleDesc}
-                    </Text>
+                    <Text style={[styles.warningBoxBody, { textAlign }]}>{t.piiSeveredDesc}</Text>
+                    <Text style={[styles.warningBoxBody, { textAlign }]}>{t.historyTruncatedDesc}</Text>
+                    <Text style={[styles.warningBoxBody, { textAlign }]}>{t.irreversibleDesc}</Text>
                   </View>
-
                   <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.colors.danger }]} onPress={handleNextTransferStep}>
                     <Text style={styles.submitBtnText}>{t.understandAgree}</Text>
                   </TouchableOpacity>
@@ -298,7 +349,6 @@ export default function GarageScreen({ navigation }: any) {
               </View>
             )}
 
-            {/* Step 2: Input Contact */}
             {transferStep === 2 && (
               <View style={styles.stepContainer}>
                 <View style={[styles.modalHeader, { flexDirection: rowDirection }]}>
@@ -309,17 +359,8 @@ export default function GarageScreen({ navigation }: any) {
                 </View>
                 <View style={styles.stepContentBody}>
                   <Text style={[styles.label, { textAlign }]}>{t.newOwnerPhoneEmail}</Text>
-                  <TextInput
-                    style={[styles.input, { textAlign }]}
-                    placeholder={t.newOwnerContactPlaceholder}
-                    placeholderTextColor={theme.colors.textSecondary}
-                    value={newOwnerContact}
-                    onChangeText={setNewOwnerContact}
-                  />
-                  <Text style={[styles.helperText, { textAlign }]}>
-                    {t.magicLinkNotice}
-                  </Text>
-
+                  <TextInput style={[styles.input, { textAlign }]} placeholder={t.newOwnerContactPlaceholder} placeholderTextColor={theme.colors.textSecondary} value={newOwnerContact} onChangeText={setNewOwnerContact} />
+                  <Text style={[styles.helperText, { textAlign }]}>{t.magicLinkNotice}</Text>
                   <TouchableOpacity style={styles.submitBtn} onPress={handleNextTransferStep}>
                     <Text style={styles.submitBtnText}>{t.nextStep}</Text>
                   </TouchableOpacity>
@@ -327,7 +368,6 @@ export default function GarageScreen({ navigation }: any) {
               </View>
             )}
 
-            {/* Step 3: Confirmation */}
             {transferStep === 3 && (
               <View style={styles.stepContainer}>
                 <View style={[styles.modalHeader, { flexDirection: rowDirection }]}>
@@ -337,14 +377,9 @@ export default function GarageScreen({ navigation }: any) {
                   </TouchableOpacity>
                 </View>
                 <View style={styles.stepContentBody}>
-                  <Text style={[styles.warningText, { textAlign }]}>
-                    {t.readyTransferNotice}
-                  </Text>
+                  <Text style={[styles.warningText, { textAlign }]}>{t.readyTransferNotice}</Text>
                   <Text style={[styles.contactHighlight, { textAlign }]}>{newOwnerContact}</Text>
-                  <Text style={[styles.warningSubtext, { textAlign }]}>
-                    {t.severNotice}
-                  </Text>
-
+                  <Text style={[styles.warningSubtext, { textAlign }]}>{t.severNotice}</Text>
                   <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.colors.danger }]} onPress={handleExecuteTransfer}>
                     <Text style={styles.submitBtnText}>{t.executeTransfer}</Text>
                   </TouchableOpacity>
@@ -352,7 +387,6 @@ export default function GarageScreen({ navigation }: any) {
               </View>
             )}
 
-            {/* Step 4: Progress / Complete */}
             {transferStep === 4 && (
               <View style={[styles.stepContainer, { paddingVertical: 40 }]}>
                 {transferLoading ? (
@@ -364,9 +398,7 @@ export default function GarageScreen({ navigation }: any) {
                   <View style={styles.loadingContainer}>
                     <Icon name="check-circle-outline" size={64} color={theme.colors.primary} />
                     <Text style={styles.successTitle}>{t.transferSuccessful}</Text>
-                    <Text style={styles.successBody}>
-                      {t.transferSuccessDetail}
-                    </Text>
+                    <Text style={styles.successBody}>{t.transferSuccessDetail}</Text>
                     <TouchableOpacity style={styles.closeBtn} onPress={() => setTransferModalVisible(false)}>
                       <Text style={styles.closeBtnText}>{t.done}</Text>
                     </TouchableOpacity>
@@ -374,11 +406,24 @@ export default function GarageScreen({ navigation }: any) {
                 )}
               </View>
             )}
-
           </View>
         </View>
       </Modal>
 
+      {/* DYNAMIC ILS PAYWALL MODAL */}
+      <PaywallModal
+        visible={paywallVisible}
+        onClose={() => {
+          setPaywallVisible(false);
+          setPaywallVehicle(null);
+        }}
+        onSuccess={() => {
+          setPaywallVisible(false);
+          setPaywallVehicle(null);
+          if (user?.id) fetchGarage(user.id);
+        }}
+        vehicleName={paywallVehicle ? `${paywallVehicle.year} ${paywallVehicle.make} ${paywallVehicle.model}` : 'Selected Vehicle'}
+      />
     </View>
   );
 }
@@ -414,16 +459,44 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     fontWeight: theme.typography.weights.medium,
   },
+  cardContainer: {
+    position: 'relative',
+    marginBottom: 16,
+  },
   card: {
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.card,
     padding: 16,
-    marginBottom: 16,
     borderColor: theme.colors.border,
     borderWidth: 1.5,
   },
-  cardHeader: {
+  cardLocked: {
+    opacity: 0.35,
+  },
+  lockOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.4)',
+    borderRadius: theme.borderRadius.card,
+  },
+  lockBanner: {
     flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.primary, // Forest Green locked badge
+    borderRadius: theme.borderRadius.button,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
+  },
+  lockBannerText: {
+    color: '#FFFFFF',
+    fontWeight: theme.typography.weights.bold,
+    marginLeft: 8,
+    fontSize: 14,
+  },
+  cardHeader: {
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
@@ -440,7 +513,6 @@ const styles = StyleSheet.create({
     fontWeight: theme.typography.weights.medium,
   },
   cardSpecs: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
     backgroundColor: theme.colors.background,
     borderRadius: 8,
@@ -450,7 +522,6 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
   },
   specItem: {
-    flexDirection: 'row',
     alignItems: 'center',
   },
   specText: {
@@ -460,7 +531,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   badgeTransferred: {
-    flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: theme.colors.highlight,
     borderColor: theme.colors.primary,
@@ -477,22 +547,16 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   cardActions: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
     borderTopColor: theme.colors.border,
     borderTopWidth: 1.5,
     paddingTop: 12,
   },
   actionBtn: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
     paddingVertical: 8,
-  },
-  actionBtnDanger: {
-    borderLeftColor: theme.colors.border,
-    borderLeftWidth: 1.5,
   },
   actionBtnText: {
     fontSize: 14,
@@ -514,7 +578,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
@@ -527,7 +591,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   modalHeader: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,

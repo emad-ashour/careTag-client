@@ -1,7 +1,7 @@
 /**
  * theme.ts
  * Central CareTag UI/UX design system tokens.
- * Enforces High-Contrast Light theme.
+ * Enforces High-Contrast Light theme based on the UI Master Contract.
  */
 
 export const theme = {

@@ -64,7 +64,10 @@ export default function ClaimVehicleScreen({ route, navigation }: any) {
   };
 
   const handleGoToGarage = () => {
-    navigation.navigate('MainTabs', { screen: 'Garage' });
+    navigation.navigate('MainTabs', { 
+      screen: 'Garage',
+      params: { highlightLockedVehicleId: claimedVehicle?.id }
+    });
   };
 
   return (

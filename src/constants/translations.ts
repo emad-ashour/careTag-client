@@ -15,6 +15,22 @@ export const translations = {
     or: 'أو',
     enterDemo: 'الدخول في الوضع التجريبي (تجاوز المصادقة)',
     tagline: 'صيانة السيارات، بدون عناء وبأمان',
+    emailLabel: 'البريد الإلكتروني',
+    nameLabel: 'الاسم الكامل (الأول والأخير)',
+    userAgreementText: 'أوافق على شروط الخدمة واتفاقية المستخدم',
+    mobileExistsError: 'رقم الهاتف هذا مسجل بالفعل. يرجى طلب المساعدة إذا نسيت كلمة المرور الخاصة بك.',
+    acceptAgreementError: 'يرجى الموافقة على اتفاقية المستخدم للمتابعة.',
+    confirmPasswordLabel: 'تأكيد كلمة المرور',
+    passwordsDoNotMatchError: 'كلمتا المرور غير متطابقتين.',
+    pressToViewAgreement: '(اضغط هنا لعرض الاتفاقية)',
+    agreementTitle: 'اتفاقية المستخدم وسياسة الخصوصية',
+    agreementContent: `شروط الاستخدام وسياسة الخصوصية لـ CareTag:
+
+1. جمع البيانات: نقوم بجمع رقم جوالك، بريدك الإلكتروني، واسمك لإنشاء حسابك وإدارة تراخيص مركباتك.
+2. خصوصية البيانات: نلتزم بحماية بياناتك الشخصية وعدم مشاركتها مع أطراف ثالثة إلا لمقدمي خدمات صيانة السيارات المعتمدين الذين تختار التعامل معهم.
+3. نقل الملكية: عند نقل ملكية مركبة، سيتم مسح بياناتك الشخصية (PII) نهائياً من سجلات المركبة المنقولة وتحديد عرض السجل للمالك الجديد بآخر 5 زيارات فقط لحماية خصوصيتك.
+4. الإفصاح عن المعلومات: قد يتم الكشف عن معلومات الصيانة العامة (مثل المسافة المقطوعة، ونوع الخدمة) لأغراض التحقق من تاريخ المركبة دون الكشف عن هويتك.
+5. الموافقة: باستمرار استخدام التطبيق، فإنك توافق على شروط الاستخدام هذه وسياسات الخصوصية المعمول بها.`,
 
     // Garage Screen
     emptyGarage: 'مرآبك فارغ.',
@@ -135,6 +151,22 @@ export const translations = {
     or: 'OR',
     enterDemo: 'Enter Demo Mode (Bypass Auth)',
     tagline: 'Automotive Maintenance, Frictionless & Secure',
+    emailLabel: 'Email Address',
+    nameLabel: 'Full Name (First and Last)',
+    userAgreementText: 'I agree to the Terms of Service and User Agreement',
+    mobileExistsError: 'This mobile number is already registered. Please request help if you forgot your password.',
+    acceptAgreementError: 'Please accept the user agreement to continue.',
+    confirmPasswordLabel: 'Confirm Password',
+    passwordsDoNotMatchError: 'Passwords do not match.',
+    pressToViewAgreement: '(Press here to view the agreement)',
+    agreementTitle: 'User Agreement & Privacy Policy',
+    agreementContent: `CareTag Terms of Use and Privacy Policy:
+
+1. Data Collection: We collect your mobile number, email, and name to register your account and manage your vehicle licenses.
+2. Data Privacy: We are committed to protecting your personal data. We do not disclose your PII to third parties except for authorized service centers you explicitly engage with.
+3. Ownership Transfer: Upon transferring ownership of a vehicle, your personal identity, notes, and contact details are permanently severed from the vehicle records. The new owner is restricted to viewing only the last 5 service log entries.
+4. Information Disclosure: Anonymized mechanical history (e.g. mileage, service type) may be shared for vehicle status verification purposes.
+5. Consent: By accepting this agreement, you consent to the storage, processing, and transfer of data as described above.`,
 
     // Garage Screen
     emptyGarage: 'Your garage is empty.',
