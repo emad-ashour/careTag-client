@@ -128,7 +128,7 @@ const _createTables = async (db: SQLite.SQLiteDatabase) => {
 export const getAllVehicles = async (userId: string): Promise<Vehicle[]> => {
   const db = await getClientDB();
   const [results] = await db.executeSql(
-    'SELECT * FROM vehicles WHERE owner_user_id = ? ORDER BY claimed_at DESC',
+    'SELECT * FROM vehicles WHERE owner_user_id = ? ORDER BY claimed_at ASC',
     [userId],
   );
   const list: Vehicle[] = [];

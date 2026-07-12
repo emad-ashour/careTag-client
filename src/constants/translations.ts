@@ -33,8 +33,8 @@ export const translations = {
 5. الموافقة: باستمرار استخدام التطبيق، فإنك توافق على شروط الاستخدام هذه وسياسات الخصوصية المعمول بها.`,
 
     // Garage Screen
-    emptyGarage: 'مرآبك فارغ.',
-    emptyGarageSub: 'أضف مركبة لإدارة تذكيراتها وخدماتها.',
+    emptyGarage: 'المرآب فارغ.',
+    emptyGarageSub: 'سيتم إضافة مركباتك وتحديثها بواسطة فني الوكالة.',
     addVehicle: 'إضافة مركبة',
     make: 'الشركة المصنعة',
     model: 'الموديل',
@@ -170,7 +170,7 @@ export const translations = {
 
     // Garage Screen
     emptyGarage: 'Your garage is empty.',
-    emptyGarageSub: 'Add a vehicle to manage its reminders and services.',
+    emptyGarageSub: 'Your vehicles will be added and updated by your agency technician.',
     addVehicle: 'Add Vehicle',
     make: 'Make',
     model: 'Model',

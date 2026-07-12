@@ -31,7 +31,7 @@ import PaywallModal from '../components/PaywallModal';
 
 export default function GarageScreen({ route, navigation }: any) {
   const { user } = useAuthStore();
-  const { vehicles, isLoading, fetchGarage, addVehicle } = useGarageStore();
+  const { vehicles, isLoading, fetchGarage } = useGarageStore();
   
   // Quota & Paywall State
   const quota = user?.license_quota ?? 1;
@@ -39,17 +39,8 @@ export default function GarageScreen({ route, navigation }: any) {
   const [paywallVehicle, setPaywallVehicle] = useState<Vehicle | null>(null);
 
   // Modals state
-  const [addModalVisible, setAddModalVisible] = useState(false);
   const [transferModalVisible, setTransferModalVisible] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
-
-  // New vehicle form state
-  const [make, setMake] = useState('');
-  const [model, setModel] = useState('');
-  const [year, setYear] = useState('');
-  const [licensePlate, setLicensePlate] = useState('');
-  const [vin, setVin] = useState('');
-  const [mileage, setMileage] = useState('');
 
   // Transfer state machine
   const [transferStep, setTransferStep] = useState(1);
@@ -83,41 +74,7 @@ export default function GarageScreen({ route, navigation }: any) {
     }
   }, [route.params, vehicles, quota]);
 
-  const handleAddVehicle = async () => {
-    if (!make || !model || !year || !licensePlate || !vin || !mileage) {
-      Alert.alert(t.error, t.fillAllFields);
-      return;
-    }
 
-    try {
-      const newVeh = {
-        id: `veh-${Date.now()}`,
-        make,
-        model,
-        year: parseInt(year, 10),
-        license_plate: licensePlate,
-        vin,
-        mileage: parseInt(mileage, 10),
-        last_service_date: new Date().toISOString(),
-        is_transferred: 0,
-      };
-
-      if (user?.id) {
-        await addVehicle(newVeh, user.id);
-        setAddModalVisible(false);
-        setMake(''); setModel(''); setYear(''); setLicensePlate(''); setVin(''); setMileage('');
-        
-        const updatedVehiclesLength = vehicles.length + 1;
-        if (updatedVehiclesLength > quota) {
-          const newVehObj: Vehicle = { ...newVeh, owner_user_id: user.id, claimed_at: new Date().toISOString() };
-          setPaywallVehicle(newVehObj);
-          setPaywallVisible(true);
-        }
-      }
-    } catch (e) {
-      Alert.alert(t.error, t.errorAddVehicle);
-    }
-  };
 
   const handleStartTransfer = (vehicle: Vehicle) => {
     setSelectedVehicle(vehicle);
@@ -278,47 +235,7 @@ export default function GarageScreen({ route, navigation }: any) {
         }
       />
 
-      <TouchableOpacity style={styles.fab} onPress={() => setAddModalVisible(true)}>
-        <Icon name="plus" size={30} color="#FFFFFF" />
-      </TouchableOpacity>
 
-      {/* ADD VEHICLE MODAL */}
-      <Modal visible={addModalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={[styles.modalHeader, { flexDirection: rowDirection }]}>
-              <Text style={styles.modalTitle}>{t.addVehicle}</Text>
-              <TouchableOpacity onPress={() => setAddModalVisible(false)}>
-                <Icon name="close" size={24} color={theme.colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView contentContainerStyle={styles.formContainer}>
-              <Text style={[styles.label, { textAlign }]}>{t.make}</Text>
-              <TextInput style={[styles.input, { textAlign }]} placeholder={t.makePlaceholder} placeholderTextColor={theme.colors.textSecondary} value={make} onChangeText={setMake} />
-              
-              <Text style={[styles.label, { textAlign }]}>{t.model}</Text>
-              <TextInput style={[styles.input, { textAlign }]} placeholder={t.modelPlaceholder} placeholderTextColor={theme.colors.textSecondary} value={model} onChangeText={setModel} />
-              
-              <Text style={[styles.label, { textAlign }]}>{t.year}</Text>
-              <TextInput style={[styles.input, { textAlign }]} placeholder={t.yearPlaceholder} keyboardType="numeric" placeholderTextColor={theme.colors.textSecondary} value={year} onChangeText={setYear} />
-              
-              <Text style={[styles.label, { textAlign }]}>{t.licensePlate}</Text>
-              <TextInput style={[styles.input, { textAlign }]} placeholder={t.licensePlatePlaceholder} autoCapitalize="characters" placeholderTextColor={theme.colors.textSecondary} value={licensePlate} onChangeText={setLicensePlate} />
-              
-              <Text style={[styles.label, { textAlign }]}>{t.vin}</Text>
-              <TextInput style={[styles.input, { textAlign }]} placeholder={t.vinPlaceholder} autoCapitalize="characters" placeholderTextColor={theme.colors.textSecondary} value={vin} onChangeText={setVin} />
-              
-              <Text style={[styles.label, { textAlign }]}>{t.currentMileage}</Text>
-              <TextInput style={[styles.input, { textAlign }]} placeholder={t.mileagePlaceholder} keyboardType="numeric" placeholderTextColor={theme.colors.textSecondary} value={mileage} onChangeText={setMileage} />
-
-              <TouchableOpacity style={styles.submitBtn} onPress={handleAddVehicle}>
-                <Text style={styles.submitBtnText}>{t.registerVehicle}</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
 
       {/* OWNERSHIP TRANSFER MODAL */}
       <Modal visible={transferModalVisible} animationType="slide" transparent>
