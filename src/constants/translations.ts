@@ -97,7 +97,7 @@ export const translations = {
 
     // Service History Screen
     noServiceLogged: 'لا توجد خدمات مسجلة بعد.',
-    addVehicleToViewHistory: 'أضف مركبة لعرض سجلها.',
+    addVehicleToViewHistory: 'سيتم تسجيل مركباتك بواسطة فني الوكالة لعرض سجلها.',
     showingTruncatedHistoryNotice: 'يتم عرض سجل ميكانيكي مقتضب (آخر ٥ زيارات). تم قطع البيانات الشخصية.',
     technician: 'الفني',
     serviceNotes: 'ملاحظات الخدمة',
@@ -233,7 +233,7 @@ export const translations = {
 
     // Service History Screen
     noServiceLogged: 'No service visits logged yet.',
-    addVehicleToViewHistory: 'Add a vehicle to view its history.',
+    addVehicleToViewHistory: 'Your vehicles will be registered by the agency technician to view their history.',
     showingTruncatedHistoryNotice: 'Showing truncated mechanical history (last 5 visits). Personal data severed.',
     technician: 'Technician',
     serviceNotes: 'Service Notes',
